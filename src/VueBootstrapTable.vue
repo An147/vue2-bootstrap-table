@@ -37,6 +37,15 @@
             <table class="table table-bordered table-hover table-condensed table-striped vue-table">
                 <thead>
                     <tr>
+                        <th v-if="selectable" style="width:40px;">
+                            <div class="custom-control custom-checkbox">
+                                <input type="checkbox" class="custom-control-input" :id="'checkAll'+instanceId" aria-label="Select All" v-model="allSelected">
+                                <label class="custom-control-label" :for="'checkAll'+instanceId"></label>
+                            </div>
+                            <!--<div class="form-check">
+                                <input class="form-check-input position-static" type="checkbox" aria-label="Select All" v-model="allSelected">
+                            </div>-->
+                        </th>
                         <th v-for="column in displayColsVisible" @click="sortBy($event, column.name, column.sortable)"
                             track-by="column"
                             :class="getClasses(column)">
@@ -45,7 +54,16 @@
                     </tr>
                 </thead>
                 <tbody>
-                    <tr v-for="entry in filteredValuesSorted " track-by="entry" @click="rowClickHandler($event, entry)">
+                    <tr v-for="(entry, index) in filteredValuesSorted " track-by="entry" @click="rowClickHandler($event, entry)">
+                        <td v-if="selectable">
+                            <div class="custom-control custom-checkbox">
+                                <input type="checkbox" class="custom-control-input" :id="'check'+instanceId+index" v-model="entry.selected">
+                                <label class="custom-control-label" :for="'check'+instanceId+index"></label>
+                            </div>
+                            <!--<div class="form-check">
+                                <input class="form-check-input position-static" type="checkbox" aria-label="Select All" v-model="entry.selected">
+                            </div>-->
+                        </td>
                         <td v-for="column in displayColsVisible" track-by="column"
                             v-show="column.visible" :class="column.cellstyle">
                             <span v-if="column.renderfunction!==false" v-html="column.renderfunction( column.name, entry )"></span>
@@ -246,6 +264,15 @@
                 required: false,
             },
             /**
+             * Enable/disable table row selection, optional, default false.
+             * When true, it will add a checkbox column on the left side and use the value.selected field
+             */
+            selectable: {
+                type: Boolean,
+                required: false,
+                default: true,
+            },
+            /**
              * Enable/disable table sorting, optional, default true
              */
             sortable: {
@@ -345,6 +372,7 @@
         },
         data: function () {
             return {
+                instanceId: Math.floor((Math.random() * 100000000) + 1),
                 filteredSize: 0,
                 filterKey: "",
                 sortKey: [],
@@ -358,6 +386,7 @@
                 definedPageSize: 10,
                 echo: 0,
                 loading: false,
+                allSelected: false
             };
         },
         /**
@@ -461,6 +490,15 @@
             loading: function () {
                 /*document.getElementById("loadingdiv").style.width = document.getElementById("maindiv").getBoundingClientRect().width + "px";
                 document.getElementById("loadingdiv").style.height = document.getElementById("maindiv").getBoundingClientRect().height+"px";*/
+            },
+            allSelected: function() {
+                const val = this.allSelected;
+                this.values.forEach(value => {
+                    value.selected = false;
+                })
+                this.filteredValuesSorted.forEach(value => {
+                    value.selected = val;
+                })
             }
         },
         computed: {
@@ -503,7 +541,7 @@
                 if (this.page > 3)
                     temp = this.page-2;
                 return ( (temp+4) < this.maxPage  );
-            },
+            }
         },
         methods: {
             refresh: function(){
